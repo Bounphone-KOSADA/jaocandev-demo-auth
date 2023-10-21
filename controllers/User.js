@@ -37,11 +37,18 @@ exports.signup = async (req, res, next) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return sendErrorResponse(
-        res,
-        400,
-        "Please provide name, email, and password!"
-      );
+      return res.status(400).json({
+        status: "error",
+        message: "Please provide name, email, and password!",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({
+        status: "error",
+        message: "This user already exists",
+      });
     }
 
     const newUser = await User.create({
@@ -52,7 +59,6 @@ exports.signup = async (req, res, next) => {
 
     createSendToken(newUser, 201, req, res);
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       status: "error",
       message: "Internal Server Error",
@@ -81,7 +87,7 @@ exports.login = async (req, res, next) => {
     }
 
     // 3) If everything ok, send token to client
-    createSendToken(user, 200, req, res);
+    createSendToken(user, 201, req, res);
   } catch (error) {
     return res.status(500).json({
       status: "error",
@@ -133,14 +139,13 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-
 exports.getAllUsers = async (req, res, next) => {
   try {
     const user = await User.find();
     return res.status(200).json({
       status: "success",
-      data: user
-    }) 
+      data: user,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
